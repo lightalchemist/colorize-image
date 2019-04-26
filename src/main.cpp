@@ -93,8 +93,10 @@ void setupProblem(const cv::Mat& Y, const cv::Mat& scribbles,
     const cv::Mat& mask,
     Eigen::SparseMatrix<T>& AU,
     Eigen::SparseMatrix<T>& AV,
-    Eigen::VectorXd& bu,
-    Eigen::VectorXd& bv)
+    // Eigen::VectorXd& bu,
+    // Eigen::VectorXd& bv)
+    Eigen::MatrixXd& bu,
+    Eigen::MatrixXd& bv)
 {
     typedef Eigen::Triplet<double> TD;
 
@@ -176,8 +178,11 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles)
     Eigen::SparseMatrix<double> AU(N, N);
     Eigen::SparseMatrix<double> AV(N, N);
     // Eigen::Matrix<double, N, 1, N, 1> bu;
-    Eigen::VectorXd bu;
-    Eigen::VectorXd bv;
+    // Eigen::VectorXd bu;
+    // Eigen::VectorXd bv;
+
+    Eigen::MatrixXd bu = Eigen::MatrixXd::Zero(N, 1);
+    Eigen::MatrixXd bv = Eigen::MatrixXd::Zero(N, 1);
     setupProblem<double>(Y, scribbles, mask, AU, AV, bu, bv);
 
     // Solve for U, V channels
