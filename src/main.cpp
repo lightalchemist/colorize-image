@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <cmath>
 
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -74,11 +75,12 @@ cv::Mat getScribbleMask(const cv::Mat& image, const cv::Mat& scribbles, float ep
     return mask;
 }
 
-inline double weight(const Mat& Y, int i, int j, int m, int n, double coef = 1.0)
+inline double weight(const Mat& Y, int i, int j, int m, int n, double sd = 1.0)
 {
     double x = Y.at<double>(i, j);
-
-    return 0;
+    double y = Y.at<double>(m, n);
+    double d = (x - y) * (x - y) / (2 * sd * sd);
+    return std::exp(- d);
 }
 
 inline int to1Dindex(const int i, const int j, const int ncols)
@@ -89,8 +91,8 @@ inline int to1Dindex(const int i, const int j, const int ncols)
 template <typename T>
 void setupProblem(const cv::Mat& Y, const cv::Mat& scribbles,
     const cv::Mat& mask,
-    Eigen::SparseMatrix<T, Eigen::RowMajor>& AU,
-    Eigen::SparseMatrix<T, Eigen::RowMajor>& AV,
+    Eigen::SparseMatrix<T>& AU,
+    Eigen::SparseMatrix<T>& AV,
     Eigen::VectorXd& bu,
     Eigen::VectorXd& bv)
 {
@@ -108,11 +110,13 @@ void setupProblem(const cv::Mat& Y, const cv::Mat& scribbles,
     au.reserve(N * 3);
     av.reserve(N * 3);
 
-    bu.resize(N);
 
-    for (auto i = 1; i < nrows - 1; ++i) 
+    // bu.resize(N);
+
+    // Iterate in col-major order
+    for (auto i = 0; i < ncols; ++i) 
     {
-        for (auto j = 1; j < ncols - 1; ++j) 
+        for (auto j = 0; j < nrows; ++j) 
         {
             auto r = to1Dindex(i, j, ncols);
 
@@ -168,9 +172,10 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles)
     std::cout << "minVal: " << minVal << " maxVal: " << maxVal << std::endl;
 
     // Set up matrices for U and V channels
-    int N = Y.rows * Y.cols;
-    Eigen::SparseMatrix<double, Eigen::RowMajor> AU(N, N);
-    Eigen::SparseMatrix<double, Eigen::RowMajor> AV(N, N);
+    const int N = Y.rows * Y.cols;
+    Eigen::SparseMatrix<double> AU(N, N);
+    Eigen::SparseMatrix<double> AV(N, N);
+    // Eigen::Matrix<double, N, 1, N, 1> bu;
     Eigen::VectorXd bu;
     Eigen::VectorXd bv;
     setupProblem<double>(Y, scribbles, mask, AU, AV, bu, bv);
