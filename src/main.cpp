@@ -1,9 +1,9 @@
 #include <cassert>
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <cmath>
 
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -12,10 +12,9 @@
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/Sparse>
 
-using cv::Mat;
-using std::string;
-using std::vector;
-
+// using cv::Mat;
+// using std::string;
+// using std::vector;
 
 // TODO: Make type double and option
 
@@ -75,12 +74,18 @@ cv::Mat getScribbleMask(const cv::Mat& image, const cv::Mat& scribbles, float ep
     return mask;
 }
 
-inline double weight(const Mat& Y, int i, int j, int m, int n, double sd = 1.0)
+inline double weight(const cv::Mat& Y, int i, int j, int m, int n, double sd = 1.0)
 {
     double x = Y.at<double>(i, j);
     double y = Y.at<double>(m, n);
     double d = (x - y) * (x - y) / (2 * sd * sd);
-    return std::exp(- d);
+    return std::exp(-d);
+}
+
+template <typename T>
+inline T squaredDifference(const std::vector<T>& X, int r, int s)
+{
+    return (X[r] - X[s]) * (X[r] - X[s]);
 }
 
 inline int to1Dindex(const int i, const int j, const int ncols)
@@ -89,14 +94,58 @@ inline int to1Dindex(const int i, const int j, const int ncols)
 }
 
 template <typename T>
-void setupProblem(const cv::Mat& Y, const cv::Mat& scribbles,
+void to1D(const cv::Mat& m, std::vector<T> v)
+{
+    v.clear();
+    auto nrows = m.rows;
+    auto ncols = m.cols;
+    v.reserve(nrows * ncols);
+    if (m.isContinuous()) {
+        v.assign(m.datastart, m.dataend);
+    } else {
+        for (auto i = 0; i < m.rows; ++i) {
+            v.insert(v.end(), m.ptr<T>(i), m.ptr<T>(i) + ncols);
+        }
+    }
+}
+
+template <typename T>
+T variance(const std::vector<T>& vals)
+{
+    T sum = 0;
+    T squaredSum = 0;
+    for (auto v : vals) {
+        sum += v;
+        squaredSum += v * v;
+    }
+
+    return (squaredSum - sum) / static_cast<T>(vals.size());
+}
+
+template <typename T>
+void get_neighbors(int i, int j, int ncols, std::vector<T>& neighbors)
+{
+    neighbors.clear();
+    for (int dx = -1; dx < 2; dx += 2) {
+        for (int dy = -1; dy < 2; dy += 2) {
+            int m = i + dy;
+            int n = j + dx;
+            if (m < 0 || n < 0)
+                continue;
+
+            int s = m * ncols + n;
+            neighbors.push_back(s);
+        }
+    }
+}
+
+template <typename T>
+void setupProblem(const cv::Mat& Y,
+    const cv::Mat& scribbles,
     const cv::Mat& mask,
-    Eigen::SparseMatrix<T>& AU,
-    Eigen::SparseMatrix<T>& AV,
-    // Eigen::VectorXd& bu,
-    // Eigen::VectorXd& bv)
-    Eigen::MatrixXd& bu,
-    Eigen::MatrixXd& bv)
+    Eigen::SparseMatrix<T>& A,
+    Eigen::VectorXd& bu,
+    Eigen::VectorXd& bv)
 {
     typedef Eigen::Triplet<double> TD;
 
@@ -104,48 +153,92 @@ void setupProblem(const cv::Mat& Y, const cv::Mat& scribbles,
     auto ncols = Y.cols;
     auto N = nrows * ncols;
 
-    // Handle borders
+    // TODO: Set size of sparse matrix inside here
+    std::vector<TD> a;
+    a.reserve(N * 3);
+    bu.resize(N);
+    bv.resize(N);
+    bu.setZero();
+    bv.setZero();
 
-    // Inside of image
-    std::vector<TD> au;
-    std::vector<TD> av;
-    au.reserve(N * 3);
-    av.reserve(N * 3);
+    cv::Mat yuv_marks;
+    cv::cvtColor(scribbles, yuv_marks, cv::COLOR_BGR2YUV);
+    yuv_marks.convertTo(yuv_marks, CV_64F);
+    std::vector<cv::Mat> channels;
+    cv::split(yuv_marks, channels);
+    cv::Mat& U = channels[1];
+    cv::Mat& V = channels[2];
 
+    // TODO: See if we can do this more efficiently using matrix reshape
+    std::vector<double> y, u, v;
+    std::vector<bool> m;
+    to1D(Y, y);
+    to1D(U, u);
+    to1D(V, v);
+    to1D(mask, m);
 
-    // bu.resize(N);
+    const int n_neighbors = 4;
+    std::vector<double> nw, ny;
+    nw.reserve(n_neighbors);
+    ny.reserve(n_neighbors + 1);
 
-    // Iterate in col-major order
-    for (auto i = 0; i < ncols; ++i) 
-    {
-        for (auto j = 0; j < nrows; ++j) 
-        {
-            auto r = to1Dindex(i, j, ncols);
+    std::vector<unsigned long> neighbors;
+    neighbors.reserve(n_neighbors);
 
-            if (mask.at<bool>(i, j)) {
+    for (auto i = 0; i < nrows; ++i) {
+        for (auto j = 0; j < ncols; ++j) {
+            nw.clear();
+            ny.clear();
+            neighbors.clear();
 
+            get_neighbors(i, j, ncols, neighbors);
 
-            } else {
-                // Set Lrr = 1
-                au.push_back(TD(i, j, 1));
-                av.push_back(TD(i, j, 1));
+            auto r = i * ncols + j;
+
+            // Compute weights for neighbors and normalize them
+            for (auto s : neighbors) {
+                nw.push_back(squaredDifference(y, r, s));
+                ny.push_back(y[s]);
+            }
+            ny.push_back(y[r]);
+
+            double normalizer = 0;
+            double var = variance(ny);
+            for (auto& w : nw) {
+                assert(w >= 0);
+                w = std::exp(-w / (2 * var));
+                normalizer += w;
             }
 
-            // For each of the 4 neighbors of r, compute weights
-            for (int dx = -1; dx < 2; dx += 2) {
-                for (int dy = -1; dy < 2; dy += 2) {
-                    int m = i + dx;
-                    int n = j + dy;
+            for (auto& w : nw) {
+                w /= normalizer;
+            }
 
+            // For each neighbor, set the appropriate coefficient
+            for (auto k = 0; k < neighbors.size(); ++k) {
 
-
+                auto s = neighbors[k];
+                auto wk = nw[k];
+                if (m[s]) {
+                    bu(r) += wk * u[s];
+                    bv(r) += wk * v[s];
+                } else {
+                    a.push_back(TD(r, s, -wk));
                 }
+            }
+
+            // Current pixel itself
+            if (m[r]) {
+                bu(r) -= u[r];
+                bv(r) -= v[r];
+            } else {
+                // Set Lrr = 1
+                a.push_back(TD(r, r, 1));
             }
         }
     }
 
-    AU.setFromTriplets(au.begin(), au.end());
-    AV.setFromTriplets(av.begin(), av.end());
+    A.setFromTriplets(a.begin(), a.end());
 }
 
 cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles)
@@ -158,48 +251,36 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles)
     cv::cvtColor(scribbles, yuv_marks, cv::COLOR_BGR2YUV);
     yuv_marks.convertTo(yuv_marks, CV_64F);
 
-    std::cout << type2str(yuv_image.type()) << std::endl;
-    std::cout << type2str(yuv_marks.type()) << std::endl;
-
     cv::Mat mask = getScribbleMask(image, scribbles);
 
     std::vector<cv::Mat> channels;
     cv::split(yuv_image, channels);
     cv::Mat Y = channels[0];
 
-    double minVal, maxVal;
-    cv::minMaxLoc(yuv_image, &minVal, &maxVal);
-    std::cout << "minVal: " << minVal << " maxVal: " << maxVal << std::endl;
-    cv::minMaxLoc(yuv_marks, &minVal, &maxVal);
-    std::cout << "minVal: " << minVal << " maxVal: " << maxVal << std::endl;
-
     // Set up matrices for U and V channels
+    // TODO: Should move resize inside setupProblem()
     const int N = Y.rows * Y.cols;
-    Eigen::SparseMatrix<double> AU(N, N);
-    Eigen::SparseMatrix<double> AV(N, N);
-    // Eigen::Matrix<double, N, 1, N, 1> bu;
-    // Eigen::VectorXd bu;
-    // Eigen::VectorXd bv;
+    Eigen::SparseMatrix<double> A(N, N);
+    Eigen::VectorXd bu;
+    Eigen::VectorXd bv;
 
-    Eigen::MatrixXd bu = Eigen::MatrixXd::Zero(N, 1);
-    Eigen::MatrixXd bv = Eigen::MatrixXd::Zero(N, 1);
-    setupProblem<double>(Y, scribbles, mask, AU, AV, bu, bv);
+    setupProblem<double>(Y, scribbles, mask, A, bu, bv);
 
     // Solve for U, V channels
-    // Eigen::LeastSquaresConjugateGradient<Eigen::SparseMatrix<double> > solver;
-    // solver.compute(AU);
-    // Eigen::VectorXd U = solver.solve(bu);
-    // if (solver.info() != Eigen::Success)
-    // {
-    //     throw std::runtime_error("Failed to solve for U channel.");
-    // }
-    //
-    // solver.compute(AV);
-    // Eigen::VectorXd V = solver.solve(bv);
-    // if (solver.info() != Eigen::Success)
-    // {
-    //     throw std::runtime_error("Failed to solve for V channel.");
-    // }
+    Eigen::LeastSquaresConjugateGradient<Eigen::SparseMatrix<double> > solver;
+    solver.compute(A);
+    Eigen::VectorXd U = solver.solve(bu);
+    if (solver.info() != Eigen::Success)
+    {
+        throw std::runtime_error("Failed to solve for U channel.");
+    }
+
+    // solver.compute(A);
+    Eigen::VectorXd V = solver.solve(bv);
+    if (solver.info() != Eigen::Success)
+    {
+        throw std::runtime_error("Failed to solve for V channel.");
+    }
 
     // Combine U, V with yuv_image's Y
     // Convert U to OpenCV Mat and save in channels[1]
@@ -207,8 +288,9 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles)
 
     // cv::Mat color_image;
     // cv::merge(channels, color_image);
+    // Convert to appropriate CV_8UC3, perhaps with the necessary clipping
 
-    Mat YY;
+    cv::Mat YY;
     Y.convertTo(YY, CV_8U);
     cv::imshow("Y", YY);
 
