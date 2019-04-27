@@ -94,7 +94,7 @@ inline int to1Dindex(const int i, const int j, const int ncols)
 }
 
 template <typename T>
-void to1D(const cv::Mat& m, std::vector<T> v)
+void to1D(const cv::Mat& m, std::vector<T>& v)
 {
     v.clear();
     auto nrows = m.rows;
@@ -119,15 +119,22 @@ T variance(const std::vector<T>& vals)
         squaredSum += v * v;
     }
 
-    return (squaredSum - sum) / static_cast<T>(vals.size());
+    assert (sum >= 0);
+    assert (squaredSum >= 0);
+
+    T n = vals.size();
+    return squaredSum / n - (sum * sum) / (n * n) + 0.001;
 }
 
 template <typename T>
 void get_neighbors(int i, int j, int ncols, std::vector<T>& neighbors)
 {
     neighbors.clear();
-    for (int dx = -1; dx < 2; dx += 2) {
-        for (int dy = -1; dy < 2; dy += 2) {
+    for (int dx = -1; dx < 2; dx += 1) {
+        for (int dy = -1; dy < 2; dy += 1) {
+            if (dx == 0 && dy == 0)
+                continue;
+
             int m = i + dy;
             int n = j + dx;
             if (m < 0 || n < 0)
@@ -177,7 +184,10 @@ void setupProblem(const cv::Mat& Y,
     to1D(V, v);
     to1D(mask, m);
 
-    const int n_neighbors = 4;
+    std::cout << "Y size: " << Y.size() << " # channels: " << Y.channels() << std::endl;
+    std::cout << "y size: " << y.size() << std::endl;
+
+    const int n_neighbors = 8;
     std::vector<double> nw, ny;
     nw.reserve(n_neighbors);
     ny.reserve(n_neighbors + 1);
@@ -185,6 +195,8 @@ void setupProblem(const cv::Mat& Y,
     std::vector<unsigned long> neighbors;
     neighbors.reserve(n_neighbors);
 
+    std::cout << "Generating matrices" << std::endl;
+    std::cout << "nrows: " << nrows << " ncols: " << ncols << std::endl;
     for (auto i = 0; i < nrows; ++i) {
         for (auto j = 0; j < ncols; ++j) {
             nw.clear();
@@ -192,6 +204,12 @@ void setupProblem(const cv::Mat& Y,
             neighbors.clear();
 
             get_neighbors(i, j, ncols, neighbors);
+            // std::cout << "i: " << i << " j: " << j << std::endl;
+            // std::cout << "Got neighbors" << std::endl;
+            // std::cout << "# neighbors: " << neighbors.size() << std::endl;
+            // for (auto s : neighbors) {
+            //     std::cout << "s row index: " << s / ncols << " s col index: " << s % ncols << std::endl;
+            // }
 
             auto r = i * ncols + j;
 
@@ -201,9 +219,12 @@ void setupProblem(const cv::Mat& Y,
                 ny.push_back(y[s]);
             }
             ny.push_back(y[r]);
+            // std::cout << "Computed squared diff" << std::endl;
 
             double normalizer = 0;
             double var = variance(ny);
+            // std::cout << "Variance: " << var << std::endl;
+            // double var = 2.0;
             for (auto& w : nw) {
                 assert(w >= 0);
                 w = std::exp(-w / (2 * var));
@@ -213,6 +234,10 @@ void setupProblem(const cv::Mat& Y,
             for (auto& w : nw) {
                 w /= normalizer;
             }
+
+            // for (auto w : nw) {
+            //     std::cout << "w: " << w << std::endl;
+            // }
 
             // For each neighbor, set the appropriate coefficient
             for (auto k = 0; k < neighbors.size(); ++k) {
@@ -236,6 +261,16 @@ void setupProblem(const cv::Mat& Y,
                 a.push_back(TD(r, r, 1));
             }
         }
+    }
+
+    std::cout << "Setting entries of A" << std::endl;
+    std::cout << "A rows: " << A.rows() << " A cols: " << A.cols() << std::endl;
+    std::cout << "a size: " << a.size() << std::endl;
+    
+    for (auto i = 0; i < a.size() && i < 10; ++i) {
+        auto tp = a[i];
+        std::cout << "row: " << tp.row() << " col: " << tp.col() << " val: " << tp.value() << std::endl;
+        
     }
 
     A.setFromTriplets(a.begin(), a.end());
@@ -266,25 +301,29 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles)
 
     setupProblem<double>(Y, scribbles, mask, A, bu, bv);
 
-    // Solve for U, V channels
-    Eigen::LeastSquaresConjugateGradient<Eigen::SparseMatrix<double> > solver;
-    solver.compute(A);
-    Eigen::VectorXd U = solver.solve(bu);
-    if (solver.info() != Eigen::Success)
-    {
-        throw std::runtime_error("Failed to solve for U channel.");
-    }
-
+    // // Solve for U, V channels
+    // Eigen::LeastSquaresConjugateGradient<Eigen::SparseMatrix<double> > solver;
     // solver.compute(A);
-    Eigen::VectorXd V = solver.solve(bv);
-    if (solver.info() != Eigen::Success)
-    {
-        throw std::runtime_error("Failed to solve for V channel.");
-    }
+    // Eigen::VectorXd U = solver.solve(bu);
+    // if (solver.info() != Eigen::Success)
+    // {
+    //     throw std::runtime_error("Failed to solve for U channel.");
+    // }
+    //
+    // // solver.compute(A);
+    // Eigen::VectorXd V = solver.solve(bv);
+    // if (solver.info() != Eigen::Success)
+    // {
+    //     throw std::runtime_error("Failed to solve for V channel.");
+    // }
 
     // Combine U, V with yuv_image's Y
     // Convert U to OpenCV Mat and save in channels[1]
     // Convert V to OpenCV Mat and save in channels[2]
+    // cv::Mat newU(
+    // auto p = U.data();
+    // cv::Mat newU(U.data()).reshape(0, nrows);
+    // std::cout << typeid(U.data()).name() << std::endl;
 
     // cv::Mat color_image;
     // cv::merge(channels, color_image);
