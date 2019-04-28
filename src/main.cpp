@@ -67,9 +67,13 @@ cv::Mat getScribbleMask(const cv::Mat& image, const cv::Mat& scribbles, float ep
 {
     cv::Mat diff;
     cv::absdiff(image, scribbles, diff);
+    std::vector<cv::Mat> channels;
+    cv::split(diff, channels);
+    cv::Mat mask = channels[0] + channels[1] + channels[2];
+    cv::threshold(mask, mask, eps, 255, cv::THRESH_BINARY);
 
-    cv::Mat mask;
-    cv::inRange(diff, cv::Scalar(eps, eps, eps), cv::Scalar(255, 255, 255), mask);
+    // cv::Mat mask;
+    // cv::inRange(diff, cv::Scalar(eps, eps, eps), cv::Scalar(255, 255, 255), mask);
 
     return mask;
 }
@@ -229,7 +233,7 @@ void setupProblem(const cv::Mat& Y,
             // std::cout << "Variance: " << var << std::endl;
             // double var = 1.0;
             double normalizer = 0;
-            double gamma = 0.8;
+            double gamma = 0.5;
             for (auto& w : nw) {
                 w = std::exp(- gamma * w / (2 * var));
                 normalizer += w;
@@ -322,6 +326,10 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles, const cv::Mat& 
 
     // Solve for U, V channels
     std::cout << "Solving for U channel." << std::endl;
+    // Eigen::ConjugateGradient<Eigen::SparseMatrix<double>,
+    //                          Eigen::Upper,
+    //                          Eigen::DiagonalPreconditioner<double> > solver;
+
     // Eigen::LeastSquaresConjugateGradient<Eigen::SparseMatrix<double>,
     //                                      Eigen::DiagonalPreconditioner<double> > solver;
     Eigen::BiCGSTAB<Eigen::SparseMatrix<double>,
@@ -344,6 +352,8 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles, const cv::Mat& 
         throw std::runtime_error("Failed to solve for V channel.");
     }
 
+    std::cout << "Finished coloring" << std::endl;
+
     cv::Mat mV = eigen2opencv(V, nrows, ncols);
 
     channels[1] = mU;
@@ -352,10 +362,10 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles, const cv::Mat& 
     // Combine U, V with yuv_image's Y
     // std::cout << typeid(U.data()).name() << std::endl;
 
-    cv::Mat color_image;
-    cv::merge(channels, color_image);
-    color_image.convertTo(color_image, CV_8UC3);
-    cv::cvtColor(color_image, color_image, cv::COLOR_YUV2BGR);
+    cv::Mat colorImage;
+    cv::merge(channels, colorImage);
+    colorImage.convertTo(colorImage, CV_8UC3);
+    cv::cvtColor(colorImage, colorImage, cv::COLOR_YUV2BGR);
 
     cv::Mat YY;
     Y.convertTo(YY, CV_8U);
@@ -368,7 +378,7 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles, const cv::Mat& 
     cv::imshow("UU", UU);
     cv::imshow("VV", VV);
 
-    return color_image;
+    return colorImage;
 }
 
 int main(int argc, char* argv[])
@@ -380,17 +390,38 @@ int main(int argc, char* argv[])
 
 
     try {
+        int n = Eigen::nbThreads();
+        std::cout << "Default # threads: " << n << std::endl;
+
         Eigen::setNbThreads(2);
 
         cv::Mat image = cv::imread(argv[1]);
         cv::Mat scribbles = cv::imread(argv[2]);
-        cv::Mat mask = cv::imread(argv[3]);
+        // cv::Mat mask = cv::imread(argv[3]);
         assert(image.size() == scribbles.size());
 
-        cv::Mat color_image = colorize(image, scribbles, mask);
-        cv::imwrite(argv[4], color_image);
+        cv::Mat mask = getScribbleMask(image, scribbles, 100);
+        cv::threshold(mask, mask, 200, 255, cv::THRESH_BINARY);
 
-        cv::imshow("color", color_image);
+        std::cout << mask.size() << " channels: " << mask.channels() << std::endl;
+
+
+        // const int morph_elem = 0;
+        // const int morph_size = 3;
+        // cv::Mat element = cv::getStructuringElement(morph_elem, 
+        //                                             cv::Size(2*morph_size + 1, 2*morph_size+1),
+        //                                             cv::Point(morph_size, morph_size));
+        // const int morph_op = 2;
+        // cv::Mat newMask;
+        // cv::morphologyEx(mask, newMask, morph_op, element);
+        // // cv::threshold(newMask, newMask, 100, 255, cv::THRESH_BINARY);
+        // cv::imshow("new mask", newMask);
+
+        cv::Mat colorImage = colorize(image, scribbles, mask);
+        cv::imwrite(argv[4], colorImage);
+        cv::imshow("color", colorImage);
+
+        cv::imshow("mask", mask);
 
         cv::waitKey();
 
