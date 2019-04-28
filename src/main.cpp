@@ -290,13 +290,13 @@ cv::Mat eigen2opencv(Eigen::VectorXd& v, int nrows, int ncols) {
     return X;
 }
 
-cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles)
+cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles, const cv::Mat& mask)
 {
     cv::Mat yuv_image;
     cv::cvtColor(image, yuv_image, cv::COLOR_BGR2YUV);
     yuv_image.convertTo(yuv_image, CV_64FC3);
 
-    cv::Mat mask = getScribbleMask(image, scribbles, 40);
+    // cv::Mat mask = getScribbleMask(image, scribbles, 40);
     // TODO: Use image morphology to remove a think layer from this to exclude accidentally
     // included background.
     cv::imshow("mask", mask);
@@ -373,8 +373,8 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles)
 
 int main(int argc, char* argv[])
 {
-    if (argc < 4) {
-        std::cout << "Prog: ./colorize <image> <scribbles> <output>" << std::endl;
+    if (argc < 5) {
+        std::cout << "Prog: ./colorize <image> <scribbles> <mask> <output>" << std::endl;
         return 1;
     }
 
@@ -384,10 +384,11 @@ int main(int argc, char* argv[])
 
         cv::Mat image = cv::imread(argv[1]);
         cv::Mat scribbles = cv::imread(argv[2]);
+        cv::Mat mask = cv::imread(argv[3]);
         assert(image.size() == scribbles.size());
 
-        cv::Mat color_image = colorize(image, scribbles);
-        cv::imwrite(argv[3], color_image);
+        cv::Mat color_image = colorize(image, scribbles, mask);
+        cv::imwrite(argv[4], color_image);
 
         cv::imshow("color", color_image);
 
