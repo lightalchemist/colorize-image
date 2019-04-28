@@ -14,7 +14,6 @@ PROG = "colorize"
 TEST_PROG = "test"
 
 all: linux
-	echo $(UNAME_S)
 
 mac: main.cpp
 	$(CC) $(CFLAGS) $(LDFLAGS) main.cpp -o colorize
