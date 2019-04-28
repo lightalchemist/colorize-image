@@ -100,6 +100,7 @@ void to1D(const cv::Mat& m, std::vector<T>& v)
     auto nrows = m.rows;
     auto ncols = m.cols;
     v.reserve(nrows * ncols);
+    // TODO: Fix this bug
     // if (m.isContinuous()) {
     //     std::cout << "Convert continuous matrix" << std::endl;
     //     v.assign(m.datastart, m.dataend);
@@ -115,7 +116,7 @@ void to1D(const cv::Mat& m, std::vector<T>& v)
 }
 
 template <typename T>
-T variance(const std::vector<T>& vals)
+T variance(const std::vector<T>& vals, T eps=0.001)
 {
     T sum = 0;
     T squaredSum = 0;
@@ -128,7 +129,7 @@ T variance(const std::vector<T>& vals)
     assert (squaredSum >= 0);
 
     T n = vals.size();
-    return squaredSum / n - (sum * sum) / (n * n) + 0.001;
+    return squaredSum / n - (sum * sum) / (n * n) + eps;
 }
 
 template <typename T>
@@ -173,9 +174,12 @@ void setupProblem(const cv::Mat& Y,
     bu.setZero();
     bv.setZero();
 
+    std::cout << "bu rows: " << bu.rows() << " cols: " << bu.cols() << std::endl;
+    std::cout << "bv rows: " << bv.rows() << " cols: " << bv.cols() << std::endl;
+
     cv::Mat yuv_marks;
     cv::cvtColor(scribbles, yuv_marks, cv::COLOR_BGR2YUV);
-    yuv_marks.convertTo(yuv_marks, CV_64F);
+    yuv_marks.convertTo(yuv_marks, CV_64FC3);
     std::vector<cv::Mat> channels;
     cv::split(yuv_marks, channels);
     cv::Mat& U = channels[1];
@@ -211,12 +215,6 @@ void setupProblem(const cv::Mat& Y,
             neighbors.clear();
 
             get_neighbors(i, j, nrows, ncols, neighbors);
-            // std::cout << "i: " << i << " j: " << j << std::endl;
-            // std::cout << "Got neighbors" << std::endl;
-            // std::cout << "# neighbors: " << neighbors.size() << std::endl;
-            // for (auto s : neighbors) {
-            //     std::cout << "s row index: " << s / ncols << " s col index: " << s % ncols << std::endl;
-            // }
 
             auto r = i * ncols + j;
 
@@ -226,29 +224,23 @@ void setupProblem(const cv::Mat& Y,
                 ny.push_back(y[s]);
             }
             ny.push_back(y[r]);
-            // std::cout << "Computed squared diff" << std::endl;
 
-            double normalizer = 0;
             double var = variance(ny);
             // std::cout << "Variance: " << var << std::endl;
-            // double var = 2.0;
+            // double var = 1.0;
+            double normalizer = 0;
             for (auto& w : nw) {
-                assert(w >= 0);
                 w = std::exp(-w / (2 * var));
                 normalizer += w;
             }
 
             for (auto& w : nw) {
                 w /= normalizer;
+                assert(w >= 0);
             }
-
-            // for (auto w : nw) {
-            //     std::cout << "w: " << w << std::endl;
-            // }
 
             // For each neighbor, set the appropriate coefficient
             for (auto k = 0; k < neighbors.size(); ++k) {
-
                 auto s = neighbors[k];
                 auto wk = nw[k];
                 if (m[s]) {
@@ -260,25 +252,22 @@ void setupProblem(const cv::Mat& Y,
             }
 
             // Current pixel itself
-            if (m[r]) {
-                bu(r) -= u[r];
-                bv(r) -= v[r];
-            } else {
-                // Set Lrr = 1
+            // if (m[r]) {
+            //     bu(r) -= u[r];
+            //     bv(r) -= v[r];
+            // } else {
+                // Set A[r,r] = 1
                 a.push_back(TD(r, r, 1));
-            }
+            // }
         }
     }
 
     std::cout << "Setting entries of A" << std::endl;
     std::cout << "A rows: " << A.rows() << " A cols: " << A.cols() << std::endl;
     std::cout << "a size: " << a.size() << std::endl;
-    
-    for (auto i = 0; i < a.size() && i < 10; ++i) {
-        auto tp = a[i];
-        std::cout << "row: " << tp.row() << " col: " << tp.col() << " val: " << tp.value() << std::endl;
-    }
 
+#ifndef NDEBUG
+    std::cout << "Debugging" << std::endl;
     for (auto t : a) {
         if (t.row() < 0 || t.row() >= N) {
             std::cout << "Invalid row index: " << t.row() << std::endl;
@@ -286,21 +275,28 @@ void setupProblem(const cv::Mat& Y,
         if (t.col() < 0 || t.col() >= N) {
             std::cout << "Invalid col index: " << t.col() << std::endl;
         }
-
     }
+#endif
 
     A.setFromTriplets(a.begin(), a.end());
+
+    std::cout << "A top corner" << std::endl;
+    std::cout << A.topLeftCorner(10, 10) << std::endl;
+}
+
+cv::Mat eigen2opencv(Eigen::VectorXd& v, int nrows, int ncols) {
+    // std::vector<double> data;
+    // data.reserve(nrows * ncols);
+
+    cv::Mat X(nrows, ncols, CV_64FC1, v.data());
+    return X;
 }
 
 cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles)
 {
     cv::Mat yuv_image;
     cv::cvtColor(image, yuv_image, cv::COLOR_BGR2YUV);
-    yuv_image.convertTo(yuv_image, CV_64F);
-
-    cv::Mat yuv_marks;
-    cv::cvtColor(scribbles, yuv_marks, cv::COLOR_BGR2YUV);
-    yuv_marks.convertTo(yuv_marks, CV_64F);
+    yuv_image.convertTo(yuv_image, CV_64FC3);
 
     cv::Mat mask = getScribbleMask(image, scribbles);
 
@@ -310,7 +306,9 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles)
 
     // Set up matrices for U and V channels
     // TODO: Should move resize inside setupProblem()
-    const int N = Y.rows * Y.cols;
+    const int nrows = Y.rows;
+    const int ncols = Y.cols;
+    const int N = nrows * ncols;
     Eigen::SparseMatrix<double> A(N, N);
     Eigen::VectorXd bu;
     Eigen::VectorXd bv;
@@ -318,37 +316,55 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles)
     // setupProblem<double>(Y, scribbles, mask, A, bu, bv);
     setupProblem(Y, scribbles, mask, A, bu, bv);
 
-    // // Solve for U, V channels
-    // Eigen::LeastSquaresConjugateGradient<Eigen::SparseMatrix<double> > solver;
+    // Solve for U, V channels
+    std::cout << "Solving for U channel." << std::endl;
+    Eigen::LeastSquaresConjugateGradient<Eigen::SparseMatrix<double> > solver;
+    solver.compute(A);
+    Eigen::VectorXd U = solver.solve(bu);
+    if (solver.info() != Eigen::Success)
+    {
+        throw std::runtime_error("Failed to solve for U channel.");
+    }
+
+    cv::Mat mU = eigen2opencv(U, nrows, ncols);
+
     // solver.compute(A);
-    // Eigen::VectorXd U = solver.solve(bu);
-    // if (solver.info() != Eigen::Success)
-    // {
-    //     throw std::runtime_error("Failed to solve for U channel.");
-    // }
-    //
-    // // solver.compute(A);
-    // Eigen::VectorXd V = solver.solve(bv);
-    // if (solver.info() != Eigen::Success)
-    // {
-    //     throw std::runtime_error("Failed to solve for V channel.");
-    // }
+    std::cout << "Solving for V channel." << std::endl;
+    Eigen::VectorXd V = solver.solve(bv);
+    if (solver.info() != Eigen::Success)
+    {
+        throw std::runtime_error("Failed to solve for V channel.");
+    }
+
+    cv::Mat mV = eigen2opencv(V, nrows, ncols);
+
+    channels[1] = mU;
+    channels[2] = mV;
 
     // Combine U, V with yuv_image's Y
-    // Convert U to OpenCV Mat and save in channels[1]
-    // Convert V to OpenCV Mat and save in channels[2]
-    // cv::Mat newU(
-    // auto p = U.data();
-    // cv::Mat newU(U.data()).reshape(0, nrows);
     // std::cout << typeid(U.data()).name() << std::endl;
 
-    // cv::Mat color_image;
-    // cv::merge(channels, color_image);
+    cv::Mat color_image;
+    cv::merge(channels, color_image);
+    color_image.convertTo(color_image, CV_8UC3);
+    cv::cvtColor(color_image, color_image, cv::COLOR_YUV2BGR);
+
+    cv::imshow("Color", color_image);
+
+    cv::imwrite("color.png", color_image);
+
     // Convert to appropriate CV_8UC3, perhaps with the necessary clipping
 
     cv::Mat YY;
     Y.convertTo(YY, CV_8U);
     cv::imshow("Y", YY);
+
+    cv::Mat UU;
+    mU.convertTo(UU, CV_8UC1);
+    cv::Mat VV;
+    mV.convertTo(VV, CV_8UC1);
+    cv::imshow("UU", UU);
+    cv::imshow("VV", VV);
 
     return mask;
 }
@@ -365,13 +381,13 @@ int main(int argc, char* argv[])
         cv::Mat scribbles = cv::imread(argv[2]);
         assert(image.size() == scribbles.size());
 
-        cv::Mat result = colorize(image, scribbles);
-        std::cout << result.size() << " " << result.channels() << std::endl;
+        cv::Mat mask = colorize(image, scribbles);
+        std::cout << mask.size() << " " << mask.channels() << std::endl;
 
         cv::Mat marks = cv::Mat::zeros(image.size(), CV_8UC3);
-        scribbles.copyTo(marks, result);
+        scribbles.copyTo(marks, mask);
 
-        cv::imshow("mask", result);
+        cv::imshow("mask", mask);
         cv::imshow("Marks", marks);
 
         cv::waitKey();
