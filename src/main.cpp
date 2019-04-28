@@ -279,9 +279,6 @@ void setupProblem(const cv::Mat& Y,
 #endif
 
     A.setFromTriplets(a.begin(), a.end());
-
-    std::cout << "A top corner" << std::endl;
-    std::cout << A.topLeftCorner(10, 10) << std::endl;
 }
 
 cv::Mat eigen2opencv(Eigen::VectorXd& v, int nrows, int ncols) {
@@ -298,7 +295,12 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles)
     cv::cvtColor(image, yuv_image, cv::COLOR_BGR2YUV);
     yuv_image.convertTo(yuv_image, CV_64FC3);
 
-    cv::Mat mask = getScribbleMask(image, scribbles);
+    cv::Mat mask = getScribbleMask(image, scribbles, 5);
+    cv::imshow("mask", mask);
+
+    cv::Mat marks = cv::Mat::zeros(image.size(), CV_8UC3);
+    scribbles.copyTo(marks, mask);
+    cv::imshow("Marks", marks);
 
     std::vector<cv::Mat> channels;
     cv::split(yuv_image, channels);
@@ -313,7 +315,6 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles)
     Eigen::VectorXd bu;
     Eigen::VectorXd bv;
 
-    // setupProblem<double>(Y, scribbles, mask, A, bu, bv);
     setupProblem(Y, scribbles, mask, A, bu, bv);
 
     // Solve for U, V channels
@@ -349,10 +350,6 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles)
     color_image.convertTo(color_image, CV_8UC3);
     cv::cvtColor(color_image, color_image, cv::COLOR_YUV2BGR);
 
-    cv::imshow("Color", color_image);
-
-    cv::imwrite("color.png", color_image);
-
     // Convert to appropriate CV_8UC3, perhaps with the necessary clipping
 
     cv::Mat YY;
@@ -366,29 +363,27 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles)
     cv::imshow("UU", UU);
     cv::imshow("VV", VV);
 
-    return mask;
+    return color_image;
 }
 
 int main(int argc, char* argv[])
 {
-    if (argc < 3) {
-        std::cout << "Prog: ./colorize <image> <scribbles>" << std::endl;
+    if (argc < 4) {
+        std::cout << "Prog: ./colorize <image> <scribbles> <output>" << std::endl;
         return 1;
     }
+
+    Eigen::setNbThreads(2);
 
     try {
         cv::Mat image = cv::imread(argv[1]);
         cv::Mat scribbles = cv::imread(argv[2]);
         assert(image.size() == scribbles.size());
 
-        cv::Mat mask = colorize(image, scribbles);
-        std::cout << mask.size() << " " << mask.channels() << std::endl;
+        cv::Mat color_image = colorize(image, scribbles);
 
-        cv::Mat marks = cv::Mat::zeros(image.size(), CV_8UC3);
-        scribbles.copyTo(marks, mask);
-
-        cv::imshow("mask", mask);
-        cv::imshow("Marks", marks);
+        cv::imshow("color", color_image);
+        cv::imwrite(argv[3], color_image);
 
         cv::waitKey();
     } catch (const std::runtime_error& e) {
