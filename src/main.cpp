@@ -116,7 +116,7 @@ void to1D(const cv::Mat& m, std::vector<T>& v)
 }
 
 template <typename T>
-T variance(const std::vector<T>& vals, T eps=0.001)
+T variance(const std::vector<T>& vals, T eps=0.01)
 {
     T sum = 0;
     T squaredSum = 0;
@@ -225,12 +225,13 @@ void setupProblem(const cv::Mat& Y,
             }
             ny.push_back(y[r]);
 
-            double var = variance(ny);
+            double var = variance(ny, 0.1);
             // std::cout << "Variance: " << var << std::endl;
             // double var = 1.0;
             double normalizer = 0;
+            double gamma = 0.8;
             for (auto& w : nw) {
-                w = std::exp(-w / (2 * var));
+                w = std::exp(- gamma * w / (2 * var));
                 normalizer += w;
             }
 
@@ -295,12 +296,14 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles)
     cv::cvtColor(image, yuv_image, cv::COLOR_BGR2YUV);
     yuv_image.convertTo(yuv_image, CV_64FC3);
 
-    cv::Mat mask = getScribbleMask(image, scribbles, 5);
+    cv::Mat mask = getScribbleMask(image, scribbles, 40);
+    // TODO: Use image morphology to remove a think layer from this to exclude accidentally
+    // included background.
     cv::imshow("mask", mask);
 
     cv::Mat marks = cv::Mat::zeros(image.size(), CV_8UC3);
     scribbles.copyTo(marks, mask);
-    cv::imshow("Marks", marks);
+    cv::imshow("Scribbles", marks);
 
     std::vector<cv::Mat> channels;
     cv::split(yuv_image, channels);
@@ -319,7 +322,11 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles)
 
     // Solve for U, V channels
     std::cout << "Solving for U channel." << std::endl;
-    Eigen::LeastSquaresConjugateGradient<Eigen::SparseMatrix<double> > solver;
+    // Eigen::LeastSquaresConjugateGradient<Eigen::SparseMatrix<double>,
+    //                                      Eigen::DiagonalPreconditioner<double> > solver;
+    Eigen::BiCGSTAB<Eigen::SparseMatrix<double>,
+                    Eigen::DiagonalPreconditioner<double> > solver;
+
     solver.compute(A);
     Eigen::VectorXd U = solver.solve(bu);
     if (solver.info() != Eigen::Success)
@@ -350,8 +357,6 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles)
     color_image.convertTo(color_image, CV_8UC3);
     cv::cvtColor(color_image, color_image, cv::COLOR_YUV2BGR);
 
-    // Convert to appropriate CV_8UC3, perhaps with the necessary clipping
-
     cv::Mat YY;
     Y.convertTo(YY, CV_8U);
     cv::imshow("Y", YY);
@@ -373,19 +378,21 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    Eigen::setNbThreads(2);
 
     try {
+        Eigen::setNbThreads(2);
+
         cv::Mat image = cv::imread(argv[1]);
         cv::Mat scribbles = cv::imread(argv[2]);
         assert(image.size() == scribbles.size());
 
         cv::Mat color_image = colorize(image, scribbles);
-
-        cv::imshow("color", color_image);
         cv::imwrite(argv[3], color_image);
 
+        cv::imshow("color", color_image);
+
         cv::waitKey();
+
     } catch (const std::runtime_error& e) {
         std::cout << e.what() << std::endl;
     }
