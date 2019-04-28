@@ -100,13 +100,18 @@ void to1D(const cv::Mat& m, std::vector<T>& v)
     auto nrows = m.rows;
     auto ncols = m.cols;
     v.reserve(nrows * ncols);
-    if (m.isContinuous()) {
-        v.assign(m.datastart, m.dataend);
-    } else {
+    // if (m.isContinuous()) {
+    //     std::cout << "Convert continuous matrix" << std::endl;
+    //     v.assign(m.datastart, m.dataend);
+    //     assert((nrows * ncols) == v.size());
+    // } else {
+        int total = 0;
         for (auto i = 0; i < m.rows; ++i) {
             v.insert(v.end(), m.ptr<T>(i), m.ptr<T>(i) + ncols);
+            total += ncols;
         }
-    }
+        std::cout << "Added " << total << " entries" << std::endl;
+    // }
 }
 
 template <typename T>
@@ -127,7 +132,7 @@ T variance(const std::vector<T>& vals)
 }
 
 template <typename T>
-void get_neighbors(int i, int j, int ncols, std::vector<T>& neighbors)
+void get_neighbors(int i, int j, int nrows, int ncols, std::vector<T>& neighbors)
 {
     neighbors.clear();
     for (int dx = -1; dx < 2; dx += 1) {
@@ -137,7 +142,7 @@ void get_neighbors(int i, int j, int ncols, std::vector<T>& neighbors)
 
             int m = i + dy;
             int n = j + dx;
-            if (m < 0 || n < 0)
+            if (m < 0 || n < 0 || m >= nrows || n >= ncols)
                 continue;
 
             int s = m * ncols + n;
@@ -146,11 +151,11 @@ void get_neighbors(int i, int j, int ncols, std::vector<T>& neighbors)
     }
 }
 
-template <typename T>
+// template <typename T>
 void setupProblem(const cv::Mat& Y,
     const cv::Mat& scribbles,
     const cv::Mat& mask,
-    Eigen::SparseMatrix<T>& A,
+    Eigen::SparseMatrix<double>& A,
     Eigen::VectorXd& bu,
     Eigen::VectorXd& bv)
 {
@@ -186,6 +191,8 @@ void setupProblem(const cv::Mat& Y,
 
     std::cout << "Y size: " << Y.size() << " # channels: " << Y.channels() << std::endl;
     std::cout << "y size: " << y.size() << std::endl;
+    std::cout << "u size: " << u.size() << std::endl;
+    std::cout << "v size: " << v.size() << std::endl;
 
     const int n_neighbors = 8;
     std::vector<double> nw, ny;
@@ -203,7 +210,7 @@ void setupProblem(const cv::Mat& Y,
             ny.clear();
             neighbors.clear();
 
-            get_neighbors(i, j, ncols, neighbors);
+            get_neighbors(i, j, nrows, ncols, neighbors);
             // std::cout << "i: " << i << " j: " << j << std::endl;
             // std::cout << "Got neighbors" << std::endl;
             // std::cout << "# neighbors: " << neighbors.size() << std::endl;
@@ -270,7 +277,16 @@ void setupProblem(const cv::Mat& Y,
     for (auto i = 0; i < a.size() && i < 10; ++i) {
         auto tp = a[i];
         std::cout << "row: " << tp.row() << " col: " << tp.col() << " val: " << tp.value() << std::endl;
-        
+    }
+
+    for (auto t : a) {
+        if (t.row() < 0 || t.row() >= N) {
+            std::cout << "Invalid row index: " << t.row() << std::endl;
+        }
+        if (t.col() < 0 || t.col() >= N) {
+            std::cout << "Invalid col index: " << t.col() << std::endl;
+        }
+
     }
 
     A.setFromTriplets(a.begin(), a.end());
@@ -299,7 +315,8 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles)
     Eigen::VectorXd bu;
     Eigen::VectorXd bv;
 
-    setupProblem<double>(Y, scribbles, mask, A, bu, bv);
+    // setupProblem<double>(Y, scribbles, mask, A, bu, bv);
+    setupProblem(Y, scribbles, mask, A, bu, bv);
 
     // // Solve for U, V channels
     // Eigen::LeastSquaresConjugateGradient<Eigen::SparseMatrix<double> > solver;
