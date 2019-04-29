@@ -36,10 +36,6 @@ make
 
 Edit the `Makefile` under the root directory so that the compiler can find the required libraries and header files. Then run `make` in the terminal to compile the project.
 
-```bash
-make
-```
-
 ## Run
 
 The compiled binary is located in the `bin/` directory.
