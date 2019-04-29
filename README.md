@@ -70,6 +70,7 @@ However, setting this parameter too large will typically cause more of the scrib
 | ![Original](data/casual.bmp)   | ![Scribbles](data/casual_marked.bmp)   | ![Result](data/casual_res.png)   |
 | ![Original](data/example.bmp)  | ![Scribbles](data/example_marked.bmp)  | ![Result](data/example_res.png)  |
 | ![Original](data/example3.bmp) | ![Scribbles](data/example3_marked.bmp) | ![Result](data/example3_res.png) |
+| ![Original](data/flower.bmp)   | ![Scribbles](data/flower_marked.bmp)   | ![Result](data/flower_res.png)   |
 
 ## Additional sample images
 
