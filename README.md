@@ -97,7 +97,7 @@ Additional details on solving this type of problem can be found in Prof Nisheeth
 
 The original code released by the authors of the paper can be found at [this link](https://www.cs.huji.ac.il/~yweiss/Colorization/).
 
-This implementation is written **without** consulting the code from the authors, so there might be some differences in the final output. Please bear this in mind if you intend to use the code in this library to generate results for comparison.
+This implementation is written **without** consulting the code from the authors, so there might be some differences in the final output. Please bear this in mind if you intend to use the code in this repository to generate results for comparison.
 
 Usage of this code is free for research purposes only. Please refer to the above publication if you use the program.
 
