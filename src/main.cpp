@@ -266,13 +266,18 @@ int main(int argc, char* argv[])
     try {
 
         if (argc < 4) {
-            std::cerr << argv[0] << " <image> <scribbles> <output>" << std::endl;
+            std::cerr << argv[0] << " <image> <scribbles> <output> [gamma] [threshold]" << std::endl;
             return 0;
         }
 
         double gamma = 2.0;
         if (argc >= 5) {
             gamma = std::stod(argv[4]);
+        }
+
+        int threshold = 10;
+        if (argc >= 6) {
+            threshold = std::stoi(argv[5]);
         }
 
         Eigen::setNbThreads(2);
@@ -295,7 +300,7 @@ int main(int argc, char* argv[])
 
         assert(image.size() == scribbles.size());
 
-        cv::Mat mask = getScribbleMask(image, scribbles, 10);
+        cv::Mat mask = getScribbleMask(image, scribbles, threshold);
         cv::Mat colorImage = colorize(image, scribbles, mask, gamma);
         cv::imwrite(outputPath, colorImage);
         cv::imshow("scribbles", scribbles);
