@@ -31,14 +31,9 @@ It takes in a grayscale image, an image with line scribbles, and the path to out
 ./colorize ../data/man.bmp ../data/man_marked.bmp ../data/man_res.png
 ```
 
-Original image
-![Original](data/man.bmp)
-
-Color scribbles
-![Scribbles](data/man_marked.bmp)
-
-Result
-![Result](data/man_res.png)
+| Original                  | Scribbles                         | Result                      |
+| --------                  | ___---------                         | ------                      |
+| ![Original](data/man.bmp) | ![Scribbles](data/man_marked.bmp) | ![Result](data/man_res.png) |
 
 ## Sample images and markings
 
