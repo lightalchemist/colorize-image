@@ -83,7 +83,7 @@ Most of the sample images are downloaded from [pexels.com](https://www.pexels.co
 ## Further improvements
 
 The code needs to solve a sparse linear system `Lx = b` where `L` is a Laplacian matrix with shape `N x N` and `N` is the number of pixels in the grayscale image.
-Over the past decade, a lot of research has centered around solving this particular problem to a point where 
+Over the past decade, a lot of research has centered around solving this particular problem to the point that 
 it can be solved in near linear time.
 
 One way to speed up the current code is to replace the existing biconjugate gradient solver with a suitable  fast Laplacian solvers from the [LAMG](https://code.google.com/archive/p/lamg/) project.
