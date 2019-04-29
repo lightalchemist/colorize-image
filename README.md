@@ -73,6 +73,8 @@ Original                       | Scribbles                              | Result
 ![Original](data/flower.bmp)   | ![Scribbles](data/flower_marked.bmp)   | ![Result](data/flower_res.png)  
 ![Original](data/actor.bmp)   | ![Scribbles](data/actor_marked.bmp)   | ![Result](data/actor_res.png)  
 
+Note that the image and scribbles corresponding to the "flag" is taken from this [Github repository](https://github.com/geap/Colorization) but the result is generated using the implementation in this repository.
+
 ## Additional sample images
 
 Sample images can be found in the `data` directory. 
