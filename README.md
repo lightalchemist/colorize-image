@@ -10,14 +10,24 @@ for coloring grayscale images.
 
 1. [OpenCV](https://opencv.org/)
 2. [Eigen3](https://eigen.tuxfamily.org/)
-3. [CMake](https://cmake.org/) for generating the Makefile.
+3. [CMake](https://cmake.org/) optionally for generating Makefile.
 
-Run the following commands under the root directory of the project to compile the project in the terminal.
+### Compiling with CMake
+
+This project includes a `CMakeLists.txt` to help locate the required libraries and their header files and generate the Makefile. If the above requirements are met, the following will generate the binary `colorize`.
 
 ```bash
 mkdir build
 cd build
 cmake ..
+make
+```
+
+### Compiling without CMake
+
+Edit the `Makefile` under the root directory so that the compiler can find the required libraries and header files. Then run `make` in the terminal to compile the project.
+
+```bash
 make
 ```
 
