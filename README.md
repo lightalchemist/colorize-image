@@ -24,12 +24,10 @@ make
 
 ## Run
 
-The compiled binary is located in the `build/bin` directory
-
-The compiled binary takes in a grayscale image, an image with line scribbles, and the path to output the colored image. The following 
+The compiled binary is located in the `bin/` directory
+It takes in a grayscale image, an image with line scribbles, and the path to output the colored image
 
 ```bash
-cd bin
 ./colorize ../data/man.bmp ../data/man_marked.bmp ../data/man_res.png
 ```
 
