@@ -65,7 +65,7 @@ However, setting this parameter too large will typically cause more of the scrib
 ## Sample results
 
 Original                       | Scribbles                              | Result                          
-:-------------                | :-------------                        | :-----                         
+:-------------:                | :-------------:                        | :-----:                         
 ![Original](data/man.bmp)      | ![Scribbles](data/man_marked.bmp)      | ![Result](data/man_res.png)     
 ![Original](data/casual.bmp)   | ![Scribbles](data/casual_marked.bmp)   | ![Result](data/casual_res.png)  
 ![Original](data/example.bmp)  | ![Scribbles](data/example_marked.bmp)  | ![Result](data/example_res.png) 
@@ -77,6 +77,18 @@ Original                       | Scribbles                              | Result
 Sample images can be found in the `data` directory. 
 Images ending with `_marked.bmp` correspond to color scribbles
 and those ending with `_res.png` are sample results.
+
+Most of the sample images are downloaded from [pexels.com](https://www.pexels.com/search/black-and-white/).
+
+## Further improvements
+
+We are currently solving a sparse linear system `Lx = b` where `L` is a Laplacian matrix.
+This means we can possibly exploit recent developments in solving this type of system in near linear time
+to solve this problem even faster. For e.g., we can use the [LAMG](https://code.google.com/archive/p/lamg/) 
+solver in place of Eigen3's biconjugate gradient solver.
+
+Additional details can be found in Nisheeth K. Vishnoi's [book](https://theory.epfl.ch/vishnoi/Lxb-Web.pdf)
+as well as the [website on Laplacian](https://sites.google.com/a/yale.edu/laplacian/) curated by Prof Daniel Spielman.
 
 ## Copyright
 
