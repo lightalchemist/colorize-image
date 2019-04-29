@@ -32,7 +32,7 @@ It takes in a grayscale image, an image with line scribbles, and the path to out
 ```
 
 | Original | Scribbles | Result |
-| --- | ___--- | --- |
+: --- :|: ___--- :|: --- :|
 | ![Original](data/man.bmp) | ![Scribbles](data/man_marked.bmp) | ![Result](data/man_res.png) |
 
 ## Sample images and markings
