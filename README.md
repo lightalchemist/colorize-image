@@ -1,5 +1,4 @@
 # Colorization using Optimization
----------------------------------
 
 This repository contains an implementation of the algorithm described in 
 A. Levin D. Lischinski and Y. Weiss Colorization using Optimization. ACM Transactions on Graphics, Aug 2004
@@ -31,9 +30,9 @@ It takes in a grayscale image, an image with line scribbles, and the path to out
 ./colorize ../data/man.bmp ../data/man_marked.bmp ../data/man_res.png
 ```
 
-| Original        | Scribbles           | Result  |
-| :-------------: |:-------------:| :-----:|
-| ![Original](data/man.bmp)|![Scribbles](data/man_marked.bmp) | ![Result](data/man_res.png) |
+| Original                  | Scribbles                         | Result                      |
+| :-------------:           | :-------------:                   | :-----:                     |
+| ![Original](data/man.bmp) | ![Scribbles](data/man_marked.bmp) | ![Result](data/man_res.png) |
 
 ## Sample images and markings
 
