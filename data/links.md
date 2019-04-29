@@ -1,5 +1,7 @@
 
-# Links to images
+# Links to download sample images
+
+The sample images in this directory are downloaded from the following links and manually reduced to a smaller size.
 
 [example.bmp](https://www.cs.huji.ac.il/~yweiss/Colorization/)
 [flower.bmp](https://www.pexels.com/photo/black-and-white-nature-flowers-close-up-view-57905/)
