@@ -7,7 +7,7 @@ for coloring grayscale images.
 The sparse least squares optimization problem is solved using [Eigen3](https://eigen.tuxfamily.org/)'s
 [biconjugate gradient stabilized solver](https://eigen.tuxfamily.org/dox/classEigen_1_1BiCGSTAB.html).
 
-The coefficient matrix, `A`, has size `N x N` where `N` is the number of pixels in the image,
+The coefficient matrix, `A`, has shape `N x N` where `N` is the number of pixels in the image,
 but the sparse matrix format only requires us to store `O(NK)` entries, where `K` is the roughly the number of neighbors for each pixel (currently set to 8).
 
 Due to the large size of this problem, this implementation can only color images of moderate sizes (~O(100) x O(100)), although if there is sufficient memory, the program will still run.
@@ -82,7 +82,7 @@ Most of the sample images are downloaded from [pexels.com](https://www.pexels.co
 
 ## Further improvements
 
-We are currently solving a sparse linear system `Lx = b` where `L` is a Laplacian matrix.
+The code requires solving a sparse linear system `Lx = b` where `L` is a Laplacian matrix with shape `N x N`.
 This means we can possibly exploit recent developments in solving this type of system in near linear time
 to solve this problem even faster. For e.g., we can use the [LAMG](https://code.google.com/archive/p/lamg/) 
 solver in place of Eigen3's biconjugate gradient solver.
