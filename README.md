@@ -40,9 +40,12 @@ It takes in a grayscale image, an image with line scribbles, and the path to out
 ./colorize ../data/man.bmp ../data/man_marked.bmp ../data/man_res.png
 ```
 
-| Original                  | Scribbles                         | Result                      |
-| :-------------:           | :-------------:                   | :-----:                     |
-| ![Original](data/man.bmp) | ![Scribbles](data/man_marked.bmp) | ![Result](data/man_res.png) |
+| Original                       | Scribbles                              | Result                           |
+| :-------------:                | :-------------:                        | :-----:                          |
+| ![Original](data/man.bmp)      | ![Scribbles](data/man_marked.bmp)      | ![Result](data/man_res.png)      |
+| ![Original](data/casual.bmp)   | ![Scribbles](data/casual_marked.bmp)   | ![Result](data/casual_res.png)   |
+| ![Original](data/example.bmp)  | ![Scribbles](data/example_marked.bmp)  | ![Result](data/example_res.png)  |
+| ![Original](data/example3.bmp) | ![Scribbles](data/example3_marked.bmp) | ![Result](data/example3_res.png) |
 
 ## Sample images and markings
 
