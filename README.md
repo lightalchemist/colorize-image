@@ -82,13 +82,17 @@ Most of the sample images are downloaded from [pexels.com](https://www.pexels.co
 
 ## Further improvements
 
-The code requires solving a sparse linear system `Lx = b` where `L` is a Laplacian matrix with shape `N x N`.
-This means we can possibly exploit recent developments in solving this type of system in near linear time
-to solve this problem even faster. For e.g., we can use the [LAMG](https://code.google.com/archive/p/lamg/) 
-solver in place of Eigen3's biconjugate gradient solver.
+The code needs to solve a sparse linear system `Lx = b` where `L` is a Laplacian matrix with shape `N x N`, 
+where `N` is the number of pixels in the grayscale image.
+Over the past decade, a lot of research has centered around solving this particular problem to a point where 
+it can be solved in near linear time.
 
-Additional details can be found in Nisheeth K. Vishnoi's [book](https://theory.epfl.ch/vishnoi/Lxb-Web.pdf)
-as well as the [website on Laplacian](https://sites.google.com/a/yale.edu/laplacian/) curated by Prof Daniel Spielman.
+One way to speed up the current code is to replace the existing biconjugate gradient solver with one of the fast Laplacian solvers from the [LAMG](https://code.google.com/archive/p/lamg/) project.
+
+In particular, the paper 
+[Efficient Preconditioning of Laplacian Matrices for Computer Graphics. Dilip Krishnan Raanan Fattal Rick Szeliski ACM Transactions on Graphics (Proc. SIGGRAPH 2013)](https://www.microsoft.com/en-us/research/publication/efficient-preconditioning-of-laplacian-matrices-for-computer-graphics/) describes how these solvers can be applied to this particular colorization formulation as well as other image processing problems.
+
+Additional details on solving this type of problem can be found in Prof Nisheeth K. Vishnoi's [book](https://theory.epfl.ch/vishnoi/Lxb-Web.pdf) and the [website on Laplacian](https://sites.google.com/a/yale.edu/laplacian/) managed by Prof Daniel Spielman's group.
 
 ## Copyright
 
