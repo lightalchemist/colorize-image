@@ -31,6 +31,8 @@ It takes in a grayscale image, an image with line scribbles, and the path to out
 ./colorize ../data/man.bmp ../data/man_marked.bmp ../data/man_res.png
 ```
 
+![Original](data/man.bmp)
+
 ## Sample images and markings
 
 Sample images can be found in the `data` directory. 
