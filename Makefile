@@ -16,14 +16,17 @@ endif
 LDFLAGS = -L/usr/local/lib -lopencv_core -lopencv_highgui -lopencv_imgproc -lopencv_imgcodecs
 
 CC = clang++
-PROG = "colorize"
-TEST_PROG = "test"
+EXE = "colorize"
+TEST_EXE = "test"
 
-all:
-	$(CC) $(CFLAGS) $(LDFLAGS) main.cpp -o $(PROG)
+all: src/main.cpp | output_directory
+	$(CC) $(CFLAGS) $(LDFLAGS) src/main.cpp -o "bin/$(EXE)"
 
-test: test_eigen.cpp
-	$(CC) `pkg-config --cflags eigen3` -o $(TEST_PROG) test_eigen.cpp
+test: src/test_eigen.cpp | output_directory
+	$(CC) `pkg-config --cflags eigen3` -o "bin/$(TEST_EXE)" src/test_eigen.cpp
+
+output_directory:
+	@mkdir -p bin
 
 clean:
-	rm -f colorize a.out test
+	rm -rf bin/
