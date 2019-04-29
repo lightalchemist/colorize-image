@@ -24,7 +24,7 @@ make
 
 ## Run
 
-The compiled binary is located in the `bin/` directory
+The compiled binary is located in the `bin/` directory.
 It takes in a grayscale image, an image with line scribbles, and the path to output the colored image
 
 ```bash
