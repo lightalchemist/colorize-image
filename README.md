@@ -39,4 +39,3 @@ It takes in a grayscale image, an image with line scribbles, and the path to out
 Sample images can be found in the `data` directory. 
 Images ending with `_marked.bmp` correspond to color scribbles
 and those ending with `_res.png` are sample results.
-See the example above
