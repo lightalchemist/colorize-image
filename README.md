@@ -10,7 +10,7 @@ The sparse least squares optimization problem is solved using [Eigen3](https://e
 The coefficient matrix, `A`, has shape `N x N` where `N` is the number of pixels in the image,
 but the sparse matrix format only requires us to store `O(NK)` entries, where `K` is roughly the number of neighbors for each pixel (currently set to 8).
 
-Due to the large size of this problem, this implementation can only color images of moderate size (~O(100) x O(100)), although if there is sufficient memory, the program will still run.
+Due to the large size of this problem, this implementation can only color images of moderate size (~O(100) x O(100)), although if there is sufficient memory the program will still run.
 
 ## Compile
 
