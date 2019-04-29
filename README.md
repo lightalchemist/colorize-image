@@ -39,7 +39,8 @@ Edit the `Makefile` under the root directory so that the compiler can find the r
 ## Run
 
 The compiled binary is located in the `bin/` directory.
-It takes in a grayscale image, an image with color scribbles, and the path to output the colored image
+It takes in a grayscale image, an image with color scribbles, and the path to output the colored image.
+This next line will run the binary on a sample image and store the result in the `data` directory as `man_res.png`.
 
 ```bash
 ./colorize ../data/man.bmp ../data/man_marked.bmp ../data/man_res.png
