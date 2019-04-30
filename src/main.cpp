@@ -159,11 +159,11 @@ void setupProblem(const cv::Mat& Y, const cv::Mat& scribbles, const cv::Mat& mas
     to1D(V, v);
     to1D(mask, hasColor);
 
-    const int n_neighbors = 8;
+    const int numNeighbors = 8;
     std::vector<double> weights;
-    weights.reserve(n_neighbors);
+    weights.reserve(numNeighbors);
     std::vector<unsigned long> neighbors;
-    neighbors.reserve(n_neighbors);
+    neighbors.reserve(numNeighbors);
     for (auto i = 0; i < nrows; ++i) {
         for (auto j = 0; j < ncols; ++j) {
             unsigned long r = i * ncols + j;
@@ -171,15 +171,15 @@ void setupProblem(const cv::Mat& Y, const cv::Mat& scribbles, const cv::Mat& mas
 
             getNeighbours(i, j, nrows, ncols, neighbors);
             getWeights(y, r, neighbors, weights, gamma);
-            for (auto k = 0; k < neighbors.size(); ++k) {
+            for (auto k = 0u; k < neighbors.size(); ++k) {
                 auto s = neighbors[k];
-                auto wk = weights[k];
+                auto w = weights[k];
                 if (hasColor[s]) {
                     // Move value to RHS of Ax = b
-                    bu(r) += wk * u[s];
-                    bv(r) += wk * v[s];
+                    bu(r) += w * u[s];
+                    bv(r) += w * v[s];
                 } else {
-                    coefficients.push_back(TD(r, s, -wk));
+                    coefficients.push_back(TD(r, s, -w));
                 }
             }
 
