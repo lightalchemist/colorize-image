@@ -167,10 +167,9 @@ void setupProblem(const cv::Mat& Y, const cv::Mat& scribbles, const cv::Mat& mas
     for (auto i = 0; i < nrows; ++i) {
         for (auto j = 0; j < ncols; ++j) {
             unsigned long r = i * ncols + j;
-            coefficients.push_back(TD(r, r, 1));
-
             getNeighbours(i, j, nrows, ncols, neighbors);
             getWeights(y, r, neighbors, weights, gamma);
+            coefficients.push_back(TD(r, r, 1));
             for (auto k = 0u; k < neighbors.size(); ++k) {
                 auto s = neighbors[k];
                 auto w = weights[k];
@@ -182,7 +181,6 @@ void setupProblem(const cv::Mat& Y, const cv::Mat& scribbles, const cv::Mat& mas
                     coefficients.push_back(TD(r, s, -w));
                 }
             }
-
         }
     }
 
