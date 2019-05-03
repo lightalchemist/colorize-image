@@ -7,8 +7,8 @@ for coloring grayscale images.
 The sparse least squares optimization problem is solved using [Eigen3](https://eigen.tuxfamily.org/)'s
 [biconjugate gradient stabilized solver](https://eigen.tuxfamily.org/dox/classEigen_1_1BiCGSTAB.html).
 
-The coefficient matrix, $A$, has shape $N \times N$, where $N$ is the number of pixels in the image,
-but the sparse matrix format only requires us to store $O(NK)$ entries, where $K$ is roughly the number of neighbors for each pixel (currently set to 8). Due to the large size of this problem, this implementation can only color images of moderate size (~O(100) x O(100)), although if there is sufficient memory the program will still run.
+The coefficient matrix, `L`, has shape `N x N`, where `N` is the number of pixels in the image,
+but the sparse matrix format only requires us to store O(NK) entries, where `K` is roughly the number of neighbors for each pixel (currently set to 8). Due to the large size of this problem, this implementation can only color images of moderate size (~O(100) x O(100)), although if there is sufficient memory the program will still run.
 
 ## Compile
 
@@ -80,7 +80,7 @@ Most of the sample images are downloaded from [pexels.com](https://www.pexels.co
 
 ## Further improvements
 
-The code needs to solve a sparse linear system $Lx = b$ where $L$ is a Laplacian matrix with shape $N \times N$ and $N$ is the number of pixels in the grayscale image. Over the last decade, a lot of research has centered around solving this particular problem to the point that it can be solved in near linear time.
+The code needs to solve a sparse linear system `Lx = b` where `L` is a Laplacian matrix with shape `N x N` and `N` is the number of pixels in the grayscale image. Over the last decade, a lot of research has centered around solving this particular problem to the point that it can be solved in near linear time.
 
 One way to speed up the current code is to replace the existing biconjugate gradient solver with a suitable  fast Laplacian solvers from the [LAMG](https://code.google.com/archive/p/lamg/) project.
 
