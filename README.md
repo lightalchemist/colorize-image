@@ -89,7 +89,7 @@ In particular, the paper
 
 Additional details on solving this type of problem can be found in Prof Nisheeth K. Vishnoi's [book](https://theory.epfl.ch/vishnoi/Lxb-Web.pdf) and the [website on Laplacian](https://sites.google.com/a/yale.edu/laplacian/) managed by Prof Daniel Spielman's group.
 
-**Note**: Currently, the code estimate the variance, $\sigma^2$, for computing the weights at each location locally instead using a single value for all locations. This breaks the symmetry of $L$ in return for possibly higher quality results. To apply the speedups in this section, $\sigma$ will have to be changed to be the same for all pixel locations.
+**Note**: Currently, the code estimate the variance for computing the weights at each location locally instead using a single value for all locations. This breaks the symmetry of `L` in return for possibly higher quality results. To apply the speedups in this section, the variance will have to be changed to be the same for all pixel locations.
 
 ## Copyright
 
