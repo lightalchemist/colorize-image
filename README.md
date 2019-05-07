@@ -4,13 +4,8 @@ This repository contains a C++ implementation of the algorithm described in
 A. Levin D. Lischinski and Y. Weiss Colorization using Optimization. ACM Transactions on Graphics, Aug 2004
 for coloring grayscale images.
 
-The sparse least squares optimization problem is solved using [Eigen3](https://eigen.tuxfamily.org/)'s
-[biconjugate gradient stabilized solver](https://eigen.tuxfamily.org/dox/classEigen_1_1BiCGSTAB.html).
-
-The coefficient matrix, `A`, has shape `N x N` where `N` is the number of pixels in the image,
-but the sparse matrix format only requires us to store `O(NK)` entries, where `K` is roughly the number of neighbors for each pixel (currently set to 8).
-
-Due to the large size of this problem, this implementation can only color images of moderate size (~O(100) x O(100)), although if there is sufficient memory the program will still run.
+The coefficient matrix, `L`, has shape `N x N`, where `N` is the number of pixels in the image,
+but the sparse matrix format only requires us to store O(NK) entries, where `K` is roughly the number of neighbors for each pixel (currently set to 8). Due to the large size of this problem, this implementation can only color images of moderate size (~O(100) x O(100)), although if there is sufficient memory the program will still run.
 
 ## Compile
 
@@ -82,9 +77,7 @@ Most of the sample images are downloaded from [pexels.com](https://www.pexels.co
 
 ## Further improvements
 
-The code needs to solve a sparse linear system `Lx = b` where `L` is a Laplacian matrix with shape `N x N` and `N` is the number of pixels in the grayscale image.
-Over the past decade, a lot of research has centered around solving this particular problem to the point that 
-it can be solved in near linear time.
+The code needs to solve a sparse linear system `Lx = b` where `L` is a Laplacian matrix with shape `N x N` and `N` is the number of pixels in the grayscale image. Over the last decade, a lot of research has centered around solving this particular problem to the point that it can be solved in near linear time.
 
 One way to speed up the current code is to replace the existing biconjugate gradient solver with a suitable  fast Laplacian solvers from the [LAMG](https://code.google.com/archive/p/lamg/) project.
 
@@ -92,6 +85,8 @@ In particular, the paper
 [Efficient Preconditioning of Laplacian Matrices for Computer Graphics. Dilip Krishnan Raanan Fattal Rick Szeliski ACM Transactions on Graphics (Proc. SIGGRAPH 2013)](https://www.microsoft.com/en-us/research/publication/efficient-preconditioning-of-laplacian-matrices-for-computer-graphics/) describes how these solvers can be applied to this particular colorization formulation as well as other image processing problems.
 
 Additional details on solving this type of problem can be found in Prof Nisheeth K. Vishnoi's [book](https://theory.epfl.ch/vishnoi/Lxb-Web.pdf) and the [website on Laplacian](https://sites.google.com/a/yale.edu/laplacian/) managed by Prof Daniel Spielman's group.
+
+**Note**: Currently, the code estimate the variance for computing the weights at each location locally instead using a single value for all locations. This breaks the symmetry of `L` in return for possibly higher quality results. To apply the speedups in this section, the variance will have to be changed to be the same for all pixel locations.
 
 ## Copyright
 
