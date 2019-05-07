@@ -4,9 +4,6 @@ This repository contains a C++ implementation of the algorithm described in
 A. Levin D. Lischinski and Y. Weiss Colorization using Optimization. ACM Transactions on Graphics, Aug 2004
 for coloring grayscale images.
 
-The sparse least squares optimization problem is solved using [Eigen3](https://eigen.tuxfamily.org/)'s
-[biconjugate gradient stabilized solver](https://eigen.tuxfamily.org/dox/classEigen_1_1BiCGSTAB.html).
-
 The coefficient matrix, `L`, has shape `N x N`, where `N` is the number of pixels in the image,
 but the sparse matrix format only requires us to store O(NK) entries, where `K` is roughly the number of neighbors for each pixel (currently set to 8). Due to the large size of this problem, this implementation can only color images of moderate size (~O(100) x O(100)), although if there is sufficient memory the program will still run.
 
