@@ -1,3 +1,6 @@
+#ifndef COLORIZE_HPP
+#define COLORIZE_HPP
+
 #include <cassert>
 #include <cmath>
 #include <iostream>
@@ -10,6 +13,7 @@
 #include <Eigen/IterativeLinearSolvers>
 #include <Eigen/Sparse>
 
+namespace co {
 
 cv::Mat getScribbleMask(const cv::Mat& image, const cv::Mat& scribbles, double eps = 1, int nErosions=1)
 {
@@ -251,3 +255,7 @@ cv::Mat colorize(const cv::Mat& image, const cv::Mat& scribbles, const cv::Mat& 
     return colorImage;
 }
 
+}
+
+#endif /* ifndef COLORIZE_HPP
+ */

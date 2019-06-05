@@ -48,8 +48,8 @@ int main(int argc, char* argv[])
 
         assert(image.size() == scribbles.size());
 
-        cv::Mat mask = getScribbleMask(image, scribbles, threshold);
-        cv::Mat colorImage = colorize(image, scribbles, mask, gamma);
+        cv::Mat mask = co::getScribbleMask(image, scribbles, threshold);
+        cv::Mat colorImage = co::colorize(image, scribbles, mask, gamma);
         cv::imwrite(outputPath, colorImage);
         cv::imshow("scribbles", scribbles);
         cv::imshow("original", image);
