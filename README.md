@@ -63,7 +63,8 @@ Original                       | Scribbles                              | Result
 ![Original](data/example.bmp)  | ![Scribbles](data/example_marked.bmp)  | ![Result](data/example_res.png) 
 ![Original](data/example3.bmp) | ![Scribbles](data/example3_marked.bmp) | ![Result](data/example3_res.png)
 ![Original](data/flower.bmp)   | ![Scribbles](data/flower_marked.bmp)   | ![Result](data/flower_res.png)  
-![Original](data/actor.bmp)   | ![Scribbles](data/actor_marked.bmp)   | ![Result](data/actor_res.png)  
+![Original](data/actor.bmp)   | ![Scribbles](data/actor_marked.bmp)   | ![Result](data/actor_res.png)
+![Original](data/guitar.bmp)   | ![Scribbles](data/guitar_marked.png)   | ![Result](data/guitar_res.png)
 
 Note that the image and scribbles corresponding to the "flag" is taken from this [Github repository](https://github.com/geap/Colorization) but the result is generated using the implementation in this repository.
 
