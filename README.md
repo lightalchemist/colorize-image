@@ -97,4 +97,6 @@ This implementation is written **without** consulting the code from the authors,
 
 Usage of this code is free for research purposes only. Please refer to the above publication if you use the program.
 
+The code here is released with absolutely no warranty.
+
 Copyright belongs to The Hebrew University of Jerusalem, 2004. All rights reserved.
